@@ -1,0 +1,72 @@
+---
+
+- hosts: all
+  become: yes
+
+  tasks:
+    - name: Copy DDL to server
+      copy:
+        src: ./ddl_constructor.sql
+        dest: ~/ddl_constructor.sql
+
+    - name: Copy Dockerfile
+      copy:
+        src: ./Dockerfile
+        dest: ~/Dockerfile
+
+    - name: Copy docker compose file
+      copy:
+        src: ./docker-compose.yaml
+        dest: ~/docker-compose.yaml
+
+    - name: Create yum repository for docker
+      yum_repository:
+        name: docker-repo
+        description: “repo for docker”
+        baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/
+        enabled: yes
+        gpgcheck: no
+
+    - name: Install docker
+      yum: 
+        state: present
+        update_cache: yes
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+
+    - name: Install docker-compose
+      get_url:
+        url: https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64
+        dest: /bin/docker-compose
+        mode: 'u+x,g+x'
+
+    - name: Change file ownership, group and permissions
+      file:
+        path: /bin/docker-compose
+        owner: vagrant
+        group: vagrant
+
+    - name: Docker start
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Ensure group "docker" exists
+      group:
+        name: docker
+        state: present
+
+    - name: adding ubuntu to docker group
+      user:
+        name: vagrant
+        groups: docker
+        append: yes
+
+    - name: Docker build
+      shell: docker build -t postgres-parse ~/Dockerfile
+
