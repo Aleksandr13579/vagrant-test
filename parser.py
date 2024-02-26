@@ -16,7 +16,7 @@ def parse_website(url):
         descriptions = soup.find_all('p', class_='description')
         
         # Инициализируем подключение к базе данных PostgreSQL
-        conn = psycopg2.connect(host='127.0.0.1', database='parsing-site', user='parser', password='parser')
+        conn = psycopg2.connect(host='192.168.2.66', database='parsing-site', user='vagrant', password='vagrant')
         cursor = conn.cursor()
         
         # Создаем таблицу для хранения результатов парсинга, если она еще не существует

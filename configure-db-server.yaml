@@ -1,72 +1,59 @@
 ---
-
 - hosts: all
   become: yes
 
+  vars:
+    db_user: vagrant
+    db_password: vagrant
+    db_name: parsing-site
+
+  pre_tasks: 
+    - name: "Install packages"
+      yum: "name={{ item }} state=present"
+      with_items:
+        - postgresql
+        - postgresql-server
+        - python3-devel
+        - postgresql-libs
+        - postgresql-devel
+        - python-psycopg2
+      
   tasks:
-    - name: Copy DDL to server
-      copy:
-        src: ./ddl_constructor.sql
-        dest: ~/ddl_constructor.sql
+    - name: "Find out if PostgreSQL is initialized"
+      ansible.builtin.stat:
+        path: "/var/lib/pgsql/data/pg_hba.conf"
+      register: postgres_data
 
-    - name: Copy Dockerfile
-      copy:
-        src: ./Dockerfile
-        dest: ~/Dockerfile
+    - name: "Initialize PostgreSQL"
+      shell: "postgresql-setup initdb"
+      when: not postgres_data.stat.exists
+ 
+    - name: "Start and enable services"
+      service: "name={{ item }} state=started enabled=yes"
+      with_items:
+        - postgresql
 
-    - name: Copy docker compose file
-      copy:
-        src: ./docker-compose.yaml
-        dest: ~/docker-compose.yaml
+    - name: "Allow md5 connection for the db user"
+      shell: "echo 'host    all             all             0.0.0.0/0            md5' >> /var/lib/pgsql/data/pg_hba.conf"
+      become: yes
+      become_user: postgres
+      notify: restart postgres
+    
+    - name: "Allow listen_address = *"
+      shell: "echo `listen_addresses = '*'` >> /var/lib/pgsql/data/postgresql.conf"
+      become: yes
+      become_user: postgres
+      notify: restart postgres
 
-    - name: Create yum repository for docker
-      yum_repository:
-        name: docker-repo
-        description: “repo for docker”
-        baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/
-        enabled: yes
-        gpgcheck: no
+    - name: "Load SQL script into a variable"
+      set_fact:
+        migration_sql: "{{ lookup('file', './ddl_constructor.sql') }}"
 
-    - name: Install docker
-      yum: 
-        state: present
-        update_cache: yes
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-buildx-plugin
-          - docker-compose-plugin
+    - name: "Execute script from variable"
+      command: "psql -c {{ migration_sql }}"
+      become_user: postgres
+      register: sql_response_variable
 
-    - name: Install docker-compose
-      get_url:
-        url: https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64
-        dest: /bin/docker-compose
-        mode: 'u+x,g+x'
-
-    - name: Change file ownership, group and permissions
-      file:
-        path: /bin/docker-compose
-        owner: vagrant
-        group: vagrant
-
-    - name: Docker start
-      service:
-        name: docker
-        state: started
-        enabled: yes
-
-    - name: Ensure group "docker" exists
-      group:
-        name: docker
-        state: present
-
-    - name: adding ubuntu to docker group
-      user:
-        name: vagrant
-        groups: docker
-        append: yes
-
-    - name: Docker build
-      shell: docker build -t postgres-parse ~/Dockerfile
-
+  handlers:
+    - name: restart postgres
+      service: name=postgresql state=restarted
