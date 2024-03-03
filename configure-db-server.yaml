@@ -45,12 +45,16 @@
       become_user: postgres
       notify: restart postgres
 
+    - name: "Create database parsing_site"
+      command: "psql -c \"CREATE DATABASE parsing_site;\""
+      become_user: postgres
+        
     - name: "Load SQL script into a variable"
       set_fact:
         migration_sql: "{{ lookup('file', './ddl_constructor.sql') }}"
 
     - name: "Execute script from variable"
-      command: "psql -c {{ migration_sql }}"
+      command: "psql -d parsing_site -c \"{{ migration_sql }}\""
       become_user: postgres
       register: sql_response_variable
 
