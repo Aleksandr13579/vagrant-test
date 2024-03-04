@@ -4,25 +4,42 @@
   become: yes
 
   tasks:
-    - name: Copy Dockerfile
+    - name: "Copy Dockerfile"
       copy:
-        src: ./Dockerfile
-        dest: ~/Dockerfile
+        src: "./Dockerfile"
+        dest: "/home/vagrant/Dockerfile"
 
-    - name: Copy python script to server
+    - name: "Copy python script to server"
       copy:
-        src: ./parser.py
-        dest: ~/parser.py
+        src: "./parser.py"
+        dest: "/home/vagrant/parser.py"
 
-    - name: Create yum repository for docker
+    - name: "Files in home directory vagrant"
+      find:
+        path: "/home/vagrant/"
+        file_type: "file"
+        patterns: "*"
+      register: fileList
+
+    - name: "Change file ownership, group and permissions"
+      file:
+        path: "{{ item.path }}"
+        state: "file"
+        owner: vagrant
+        group: vagrant
+        mode: "0755"
+      with_items: "{{ fileList.files }}"
+
+
+    - name: "Create yum repository for docker"
       yum_repository:
-        name: docker-repo
-        description: “repo for docker”
-        baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/
+        name: "docker-repo"
+        description: "repo for docker"
+        baseurl: "https://download.docker.com/linux/centos/7/x86_64/stable/"
         enabled: yes
         gpgcheck: no
 
-    - name: Install docker
+    - name: "Install docker"
       yum: 
         state: present
         update_cache: yes
@@ -33,35 +50,34 @@
           - docker-buildx-plugin
           - docker-compose-plugin
 
-    - name: Install docker-compose
+    - name: "Install docker-compose"
       get_url:
-        url: https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64
-        dest: /bin/docker-compose
+        url: "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64"
+        dest: "/bin/docker-compose"
         mode: 'u+x,g+x'
 
-    - name: Change file ownership, group and permissions
+    - name: "Change file ownership, group and permissions"
       file:
-        path: /bin/docker-compose
+        path: "/bin/docker-compose"
         owner: vagrant
         group: vagrant
 
-    - name: Docker start
+    - name: "Docker start"
       service:
         name: docker
         state: started
         enabled: yes
 
-    - name: Ensure group "docker" exists
+    - name: "Ensure group docker exists"
       group:
         name: docker
         state: present
 
-    - name: adding ubuntu to docker group
+    - name: "Adding ubuntu to docker group"
       user:
         name: vagrant
         groups: docker
         append: yes
 
-    - name: Docker build
-      shell: docker build -t parse ~/Dockerfile && docker run -d parse python3 /parser.py
-
+    - name: "Docker build"
+      shell: "docker build -t parse /home/vagrant/ && docker run -d parse python3 /parser.py"
