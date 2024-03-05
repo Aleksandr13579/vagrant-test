@@ -2,17 +2,5 @@
 - hosts: all
   become: yes
 
-  tasks: 
-    #- name: Updating Packages
-    #  yum:
-    #    name: "*"
-    #    state: latest
-
-    - name: Add ssh public key to authorized_keys
-      shell: "echo {{ lookup('file', 'id_rsa.pub') }} >> /home/vagrant/.ssh/authorized_keys"
-
-    - name: Install net-tools
-      yum:
-        name: net-tools
-        state: present
-        update_cache: true
+  roles:
+    - instalation-config 

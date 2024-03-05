@@ -1,0 +1,5 @@
+db_user: vagrant
+db_password: vagrant
+db_name: parsing_site
+db_schema: parsing_site
+db_table: parsed_data

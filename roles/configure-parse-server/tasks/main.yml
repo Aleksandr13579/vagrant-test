@@ -1,0 +1,51 @@
+---
+- name: "Copy Dockerfile"
+  copy:
+    src: "./Dockerfile"
+    dest: "/home/vagrant/Dockerfile"
+
+- name: "Copy python script to server"
+  copy:
+    src: "./parser.py"
+    dest: "/home/vagrant/parser.py"
+
+- name: "Files in home directory vagrant"
+  find:
+    path: "/home/vagrant/"
+    file_type: "file"
+    patterns: "*"
+  register: fileList
+
+- name: "Change file ownership, group and permissions"
+  file:
+    path: "{{ item.path }}"
+    state: "file"
+    owner: vagrant
+    group: vagrant
+    mode: "0755"
+  with_items: "{{ fileList.files }}"
+
+
+- name: "Create yum repository for docker"
+  yum_repository:
+    name: "docker-repo"
+    description: "repo for docker"
+    baseurl: "https://download.docker.com/linux/centos/7/x86_64/stable/"
+    enabled: yes
+    gpgcheck: no
+
+- name: "Install docker"
+  yum: 
+    state: present
+    update_cache: yes
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+
+- name: "Install docker-compose"
+  get_url:
+    url: "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64"
+    dest: "/bin/docker-compose"

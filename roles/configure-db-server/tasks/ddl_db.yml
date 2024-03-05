@@ -1,0 +1,14 @@
+---
+- name: "Create database {{ db_name }}"
+  command: "psql -c \"CREATE DATABASE {{ db_name }};\""
+  become_user: postgres
+    
+- name: "Load SQL script into a variable"
+  set_fact:
+    migration_sql: "{{ lookup('template', 'files/ddl_constructor.sql') }}"
+
+- name: "Execute script from variable"
+  command: "psql -d parsing_site -c \"{{ migration_sql }}\""
+  become_user: postgres
+  register: sql_response_variable
+

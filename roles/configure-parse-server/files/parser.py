@@ -16,7 +16,7 @@ def parse_website(url):
         descriptions = soup.find_all('p', class_='description')
         
         # Инициализируем подключение к базе данных PostgreSQL
-        conn = psycopg2.connect(host='192.168.2.66', database='parsing-site', user='vagrant', password='vagrant')
+        conn = psycopg2.connect(host='192.168.2.66', database='parsing_site', user='vagrant', password='vagrant')
         cursor = conn.cursor()
         
         # Создаем таблицу для хранения результатов парсинга, если она еще не существует
@@ -32,7 +32,7 @@ def parse_website(url):
             clean_description = description.text.strip().replace("'", "''")
             
             # Вставляем данные в таблицу базы данных
-            cursor.execute(f"INSERT INTO parser_site.parsed_data (title, description) VALUES ('{clean_title}', '{clean_description}')")
+            cursor.execute(f"INSERT INTO parsing_site.parsed_data (title, description) VALUES ('{clean_title}', '{clean_description}')")
         
         # Фиксируем изменения в базе данных
         conn.commit()

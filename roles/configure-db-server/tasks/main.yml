@@ -1,0 +1,6 @@
+--- 
+- name: "Configuring Database"
+  include_tasks: tasks/configuring_db.yml
+
+- name: "Create DDL database"
+  include_tasks: tasks/ddl_db.yml
