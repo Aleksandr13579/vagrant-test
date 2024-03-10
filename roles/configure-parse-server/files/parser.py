@@ -21,7 +21,7 @@ def parse_website(url):
         
         # Создаем таблицу для хранения результатов парсинга, если она еще не существует
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS parser_site.parsed_data
+            CREATE TABLE IF NOT EXISTS parsing_site.parsed_data
             (title VARCHAR(255), description TEXT);
         """)
         

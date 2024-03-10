@@ -29,18 +29,29 @@
     - postgresql
 
 - name: "Allow md5 connection for the db user"
-  shell: "echo 'hostall             all             0.0.0.0/0            md5' >> /var/lib/pgsql/data/pg_hba.conf"
+  shell: "echo 'host    all             all             0.0.0.0/0            md5' >> /var/lib/pgsql/data/pg_hba.conf"
   become: yes
   become_user: postgres
 
 - name: "Allow listen_address = *"
-  shell: "echo `listen_addresses = '*'` >> /var/lib/pgsql/data/postgresql.conf"
+  shell: "echo listen_addresses = \\'*\\' >> /var/lib/pgsql/data/postgresql.conf"
   become: yes
   become_user: postgres
+
+- name: "Enable log statement"
+  shell: "echo log_statement = \\'all\\' >> /var/lib/pgsql/data/postgresql.conf"
+  become: yes
+  become_user: postgres
+
+- name: "Enable log statement"
+  shell: "echo 'log_min_error_statement = info'  >> /var/lib/pgsql/data/postgresql.conf"
+  become: yes
+  become_user: postgres
+
 
 - name: "Restart postgres"
   service:
     name: postgresql
     state: restarted
     enabled: yes
-  become_user: postgres
+  become: yes

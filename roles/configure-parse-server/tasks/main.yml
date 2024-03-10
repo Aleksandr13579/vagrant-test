@@ -17,6 +17,7 @@
   register: fileList
 
 - name: "Change file ownership, group and permissions"
+  become: true
   file:
     path: "{{ item.path }}"
     state: "file"
@@ -27,6 +28,7 @@
 
 
 - name: "Create yum repository for docker"
+  become: true
   yum_repository:
     name: "docker-repo"
     description: "repo for docker"
@@ -35,6 +37,7 @@
     gpgcheck: no
 
 - name: "Install docker"
+  become: true
   yum: 
     state: present
     update_cache: yes
@@ -46,6 +49,40 @@
       - docker-compose-plugin
 
 - name: "Install docker-compose"
+  become: true
   get_url:
     url: "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64"
     dest: "/bin/docker-compose"
+    mode: 'u+x,g+x'
+
+- name: "Change file ownership, group and permissions"
+  become: true
+  file:
+    path: /bin/docker-compose
+    owner: vagrant
+    group: vagrant
+
+- name: "Docker start"
+  become: true
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: "Ensure group 'docker' exists"
+  become: true
+  group:
+    name: docker
+    state: present
+
+- name: "Adding ubuntu to docker group"
+  become: true
+  user:
+    name: vagrant
+    groups: docker
+    append: yes
+
+- name: "Docker build"
+  shell: "docker build -t parse:v1 ~/ && docker run -d parse:v1 python3.11 parser.py"
+  become: false
+  become_user: vagrant
